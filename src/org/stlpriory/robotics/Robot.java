@@ -1,11 +1,12 @@
 package org.stlpriory.robotics;
 
 import org.stlpriory.robotics.commands.TimedDriveCommand;
+import org.stlpriory.robotics.subsystems.BallHolderSubsystem;
+import org.stlpriory.robotics.subsystems.CANDrivetrainSubsystem;
 import org.stlpriory.robotics.subsystems.DrivetrainSubsystem;
+import org.stlpriory.robotics.subsystems.ShooterSubsystem;
 import org.strongback.Strongback;
 import org.strongback.components.ui.ContinuousRange;
-import org.strongback.components.ui.Gamepad;
-import org.strongback.hardware.Hardware;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
@@ -18,12 +19,16 @@ import edu.wpi.first.wpilibj.livewindow.LiveWindow;
  */
 public class Robot extends IterativeRobot {
 
-    static final int GAMEPAD_PORT  = 1; // in driver station
+    // Initialize robot subsystems
+    public static final DrivetrainSubsystem drivetrain = new CANDrivetrainSubsystem();
+    public static final BallHolderSubsystem ballHolder = new BallHolderSubsystem();
+    public static final ShooterSubsystem shooter = new ShooterSubsystem();
+    
+    // Human operator interface
+    private OI oi = new OI();
 
-    private DrivetrainSubsystem drivetrain;
     private ContinuousRange leftSpeed;
     private ContinuousRange rightSpeed;
-    private Gamepad gamepad;
     
     // ==================================================================================
     //                            ROBOT INIT SECTION
@@ -39,7 +44,11 @@ public class Robot extends IterativeRobot {
         initSubsystems();
 
         // Set up the human input controls for teleoperated mode. 
-        initGamepad();
+        initController();
+    }
+    
+    public OI getOI() {
+        return this.oi;
     }
 
     @Override
@@ -49,14 +58,11 @@ public class Robot extends IterativeRobot {
     }
     
     private void initSubsystems() {
-        this.drivetrain = new DrivetrainSubsystem();
+        // sub-systems statically initialized upon Robot instantiation
     }
     
-    private void initGamepad() {
-        // Left/right stick Y-values will return within the range of [-1,1]
-        this.gamepad = Hardware.HumanInterfaceDevices.logitechF310(GAMEPAD_PORT);
-        this.leftSpeed  = gamepad.getLeftY();
-        this.rightSpeed = gamepad.getRightY();
+    private void initController() {
+        this.oi = new OI();
     }
     
     // ==================================================================================
@@ -67,7 +73,7 @@ public class Robot extends IterativeRobot {
     public void autonomousInit() {
         // Start Strongback functions ...
         Strongback.start();
-        Strongback.submit(new TimedDriveCommand(this.drivetrain.getDrive(), 0.5, 0.5, false, 5.0));
+        Strongback.submit(new TimedDriveCommand(drivetrain.getDrive(), 0.5, 0.5, false, 5.0));
     }
     
     @Override
@@ -90,7 +96,7 @@ public class Robot extends IterativeRobot {
 
     @Override
     public void teleopPeriodic() {
-        this.drivetrain.getDrive().tank(this.leftSpeed.read(), this.rightSpeed.read(), true);
+        drivetrain.getDrive().tank(this.leftSpeed.read(), this.rightSpeed.read(), true);
         // Record updated status values
         updateStatus();
     }

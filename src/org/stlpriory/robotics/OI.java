@@ -1,37 +1,46 @@
 package org.stlpriory.robotics;
 
-import edu.wpi.first.wpilibj.buttons.Button;
+import org.stlpriory.robotics.commands.ExtendBallHolder;
+import org.stlpriory.robotics.commands.PickUpBall;
+import org.stlpriory.robotics.commands.PrepareToPickUpBall;
+import org.stlpriory.robotics.commands.RetractBallHolder;
+import org.stlpriory.robotics.commands.Shoot;
+import org.stlpriory.robotics.commands.StopBallHolder;
+import org.stlpriory.robotics.commands.StowBallHolder;
+import org.strongback.Strongback;
+import org.strongback.SwitchReactor;
+import org.strongback.components.ui.Gamepad;
+import org.strongback.hardware.Hardware;
 
 /**
  * This class is the glue that binds the controls on the physical operator
  * interface to the commands and command groups that allow control of the robot.
  */
 public class OI {
-    //// CREATING BUTTONS
-    // One type of button is a joystick button which is any button on a joystick.
-    // You create one by telling it which joystick it's on and which button
-    // number it is.
-    // Joystick stick = new Joystick(port);
-    // Button button = new JoystickButton(stick, buttonNumber);
+    private static final int CONTROLLER_PORT  = 1; // in driver station
+    private final Gamepad gamepad;
+
+    public OI() {
+        SwitchReactor reactor = Strongback.switchReactor();
+        this.gamepad = Hardware.HumanInterfaceDevices.logitechF310(CONTROLLER_PORT);
+        
+        reactor.whileTriggered(this.gamepad.getRightBumper(), ()->Strongback.submit(new RetractBallHolder(Robot.ballHolder)));
+        reactor.whileUntriggered(this.gamepad.getRightBumper(), ()->Strongback.submit(new StopBallHolder(Robot.ballHolder)));
+
+        reactor.whileTriggered(this.gamepad.getLeftBumper(), ()->Strongback.submit(new ExtendBallHolder(Robot.ballHolder)));
+        reactor.whileUntriggered(this.gamepad.getLeftBumper(), ()->Strongback.submit(new StopBallHolder(Robot.ballHolder)));
+
+        reactor.onTriggered(this.gamepad.getA(), ()->Strongback.submit(new StowBallHolder(Robot.ballHolder)));
+        reactor.onTriggered(this.gamepad.getB(), ()->Strongback.submit(new PrepareToPickUpBall(Robot.ballHolder)));
+        
+        reactor.onTriggered(this.gamepad.getX(), ()->Strongback.submit(new PickUpBall(Robot.shooter)));
+        reactor.onTriggered(this.gamepad.getY(), ()->Strongback.submit(new Shoot(Robot.shooter)));
+
+    }
     
-    // There are a few additional built in buttons you can use. Additionally,
-    // by subclassing Button you can create custom triggers and bind those to
-    // commands the same as any other Button.
-    
-    //// TRIGGERING COMMANDS WITH BUTTONS
-    // Once you have a button, it's trivial to bind it to a button in one of
-    // three ways:
-    
-    // Start the command when the button is pressed and let it run the command
-    // until it is finished as determined by it's isFinished method.
-    // button.whenPressed(new ExampleCommand());
-    
-    // Run the command while the button is being held down and interrupt it once
-    // the button is released.
-    // button.whileHeld(new ExampleCommand());
-    
-    // Start the command when the button is released  and let it run the command
-    // until it is finished as determined by it's isFinished method.
-    // button.whenReleased(new ExampleCommand());
+    public Gamepad getController() {
+        return this.gamepad;
+    }
+
 }
 

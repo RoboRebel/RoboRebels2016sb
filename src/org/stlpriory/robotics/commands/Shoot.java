@@ -1,20 +1,28 @@
 package org.stlpriory.robotics.commands;
 
-import org.stlpriory.robotics.subsystems.DrivetrainSubsystem;
+import org.stlpriory.robotics.subsystems.ShooterSubsystem;
 import org.strongback.command.Command;
 
 /**
  * The command that ...
  */
-public class TurnRight extends DrivetrainCommandBase {
+public class Shoot extends ShooterCommandBase {
     
     /**
-     * Base for drive train type commands.
-     * @param ballholder the ball holder subsystem
+     * Base for shooter type commands.
+     * @param shooter the ball shooter subsystem
+     */
+    public Shoot(ShooterSubsystem shooter) {
+        super(shooter);
+    }
+    
+    /**
+     * Base for shooter type commands.
+     * @param shooter the ball shooter subsystem
      * @param duration the duration of this command; should be positive
      */
-    public TurnRight(DrivetrainSubsystem drivetrain, double duration) {
-        super(drivetrain, duration);
+    public Shoot(ShooterSubsystem shooter, double duration) {
+        super(shooter, duration);
     }
 
     /**
@@ -36,7 +44,30 @@ public class TurnRight extends DrivetrainCommandBase {
      */
     @Override
     public boolean execute() {
-        turnRight(0.5);
+        if (isBallLoaded()) {
+            // Ensure that the loader arm is retracted
+            if (! isLoaderArmRetracted()) {
+                retractLoaderArm();
+            }
+            
+            // start the shooter motors spinning outward
+            startShooter();
+            
+            // pause for 1 second to allow the motors to get to full speed
+            pauseTime(1.0);
+            
+            // extend the loader arm and to push the ball into the spinning wheels
+            extendLoaderArm();
+            
+            // pause for 1 second before retracting arm
+            pauseTime(1.0);
+            
+            // retract the loader arm
+            retractLoaderArm();
+            
+            // stop the shooter motors
+            stop();
+        }
         return true;
     }
     
@@ -51,6 +82,7 @@ public class TurnRight extends DrivetrainCommandBase {
      */
     @Override
     public void interrupted() {
+        retractLoaderArm();
         stop();
     }
     
@@ -63,6 +95,7 @@ public class TurnRight extends DrivetrainCommandBase {
      */
     @Override
     public void end() {
+        retractLoaderArm();
         stop();
     }
 

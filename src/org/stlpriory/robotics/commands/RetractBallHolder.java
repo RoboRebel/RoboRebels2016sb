@@ -1,20 +1,30 @@
 package org.stlpriory.robotics.commands;
 
-import org.stlpriory.robotics.subsystems.DrivetrainSubsystem;
+import org.stlpriory.robotics.subsystems.BallHolderSubsystem;
 import org.strongback.command.Command;
 
 /**
  * The command that ...
  */
-public class TurnRight extends DrivetrainCommandBase {
+public class RetractBallHolder extends BallHolderCommandBase {
+    
+    private static final double BALL_PICKUP_ANGLE = BallHolderSubsystem.BALL_PICKUP_ANGLE;
     
     /**
-     * Base for drive train type commands.
+     * Base for ball holder type commands.
+     * @param ballholder the ball holder subsystem
+     */
+    public RetractBallHolder(BallHolderSubsystem ballholder) {
+        super(ballholder);
+    }
+    
+    /**
+     * Base for ball holder type commands.
      * @param ballholder the ball holder subsystem
      * @param duration the duration of this command; should be positive
      */
-    public TurnRight(DrivetrainSubsystem drivetrain, double duration) {
-        super(drivetrain, duration);
+    public RetractBallHolder(BallHolderSubsystem ballholder, double duration) {
+        super(ballholder, duration);
     }
 
     /**
@@ -36,8 +46,13 @@ public class TurnRight extends DrivetrainCommandBase {
      */
     @Override
     public boolean execute() {
-        turnRight(0.5);
-        return true;
+        setSpeed(BallHolderSubsystem.ARM_RETRACT_SPEED);
+        
+        if (isStowed() || getAngleSensor().getAngle() > BALL_PICKUP_ANGLE) {
+            stop();
+            return true;
+        }
+        return false;
     }
     
     /**

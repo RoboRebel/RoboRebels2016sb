@@ -1,20 +1,28 @@
 package org.stlpriory.robotics.commands;
 
-import org.stlpriory.robotics.subsystems.DrivetrainSubsystem;
+import org.stlpriory.robotics.subsystems.BallHolderSubsystem;
 import org.strongback.command.Command;
 
 /**
  * The command that ...
  */
-public class TurnRight extends DrivetrainCommandBase {
+public class StopBallHolder extends BallHolderCommandBase {
     
     /**
-     * Base for drive train type commands.
+     * Base for ball holder type commands.
+     * @param ballholder the ball holder subsystem
+     */
+    public StopBallHolder(BallHolderSubsystem ballholder) {
+        super(ballholder);
+    }
+    
+    /**
+     * Base for ball holder type commands.
      * @param ballholder the ball holder subsystem
      * @param duration the duration of this command; should be positive
      */
-    public TurnRight(DrivetrainSubsystem drivetrain, double duration) {
-        super(drivetrain, duration);
+    public StopBallHolder(BallHolderSubsystem ballholder, double duration) {
+        super(ballholder, duration);
     }
 
     /**
@@ -36,7 +44,7 @@ public class TurnRight extends DrivetrainCommandBase {
      */
     @Override
     public boolean execute() {
-        turnRight(0.5);
+        stop();
         return true;
     }
     
