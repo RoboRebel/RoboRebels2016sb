@@ -17,7 +17,7 @@ public abstract class ShooterCommandBase extends Command {
      * @param shooter the ball shooter subsystem
      */
     public ShooterCommandBase(ShooterSubsystem shooter) {
-        super(shooter.getMotor());
+        super(shooter.getRightShooterMotor(),shooter.getLeftShooterMotor());
         this.shooter = shooter;
     }
     
@@ -27,7 +27,7 @@ public abstract class ShooterCommandBase extends Command {
      * @param duration the duration of this command; should be positive
      */
     public ShooterCommandBase(ShooterSubsystem shooter, double duration) {
-        super(duration, shooter.getMotor());
+        super(shooter.getRightShooterMotor(),shooter.getLeftShooterMotor());
         this.shooter = shooter;
     }
     

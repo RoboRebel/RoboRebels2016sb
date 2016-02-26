@@ -1,6 +1,5 @@
 package org.stlpriory.robotics.subsystems;
 
-import org.stlpriory.robotics.hardware.AMOpticalEncoderSpecs;
 import org.strongback.Strongback;
 import org.strongback.components.Motor;
 import org.strongback.components.TalonSRX;
@@ -20,13 +19,8 @@ public class DrivetrainSubsystem {
     public static final int LR_MOTOR_ID = 4;
     public static final int RF_MOTOR_ID = 2;
     public static final int RR_MOTOR_ID = 1;
-
-    public static final double P_VALUE = 0.5;
-    public static final double I_VALUE = 0.02;
-    public static final double D_VALUE = 0;
-    public static final double F_VALUE = 0.5;
-    public static final int IZONE_VALUE = (int) (0.2 * AMOpticalEncoderSpecs.PULSES_PER_REV);
     
+    public static final double RAMP_RATE = 6;
     public static final boolean MASTER_SLAVE_MODE = true;
     
     protected TankDrive drive;
@@ -60,7 +54,7 @@ public class DrivetrainSubsystem {
         TalonSRX leftFront  = Hardware.Motors.talonSRX( createTalon(LF_MOTOR_ID) );
         TalonSRX leftRear   = Hardware.Motors.talonSRX( createTalon(LR_MOTOR_ID) );  
         
-        TalonSRX rightFront = Hardware.Motors.talonSRX(createTalon(RF_MOTOR_ID) );
+        TalonSRX rightFront = Hardware.Motors.talonSRX( createTalon(RF_MOTOR_ID) );
         TalonSRX rightRear  = Hardware.Motors.talonSRX( createTalon(RR_MOTOR_ID) );
         
         Motor left  = Motor.compose(leftFront, leftRear);
@@ -112,7 +106,7 @@ public class DrivetrainSubsystem {
 
             // Voltage ramp rate in volts/sec (works regardless of mode)
             // (e.g. setVoltageRampRate(6.0) results in 0V to 6V in one sec)
-            talon.setVoltageRampRate(6.0);
+            talon.setVoltageRampRate(RAMP_RATE);
 
             return talon;
 

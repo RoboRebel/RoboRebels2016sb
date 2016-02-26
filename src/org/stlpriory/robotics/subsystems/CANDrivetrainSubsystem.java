@@ -1,7 +1,6 @@
 package org.stlpriory.robotics.subsystems;
 
-import org.stlpriory.robotics.hardware.AMOpticalEncoderSpecs;
-import org.stlpriory.robotics.hardware.CIMMotorSpecs;
+import org.stlpriory.robotics.hardware.HardwareSpecs;
 
 import edu.wpi.first.wpilibj.CANTalon;
 import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
@@ -17,9 +16,12 @@ public class CANDrivetrainSubsystem extends DrivetrainSubsystem {
     public static final double I_VALUE = 0.02;
     public static final double D_VALUE = 0;
     public static final double F_VALUE = 0.5;
-    public static final int IZONE_VALUE = (int) (0.2 * AMOpticalEncoderSpecs.PULSES_PER_REV);
+    public static final int IZONE_VALUE = (int) (0.2 * HardwareSpecs.Encoders.AMOpticalEncoder.PULSES_PER_REV);
     
-    public static double RAMP_RATE = 2;
+    public static final int ENCODER_CODES_PER_REV = HardwareSpecs.Encoders.AMOpticalEncoder.CYCLES_PER_REV;
+    public static final int CLOSED_LOOP_ERROR = (int) (0.1 * HardwareSpecs.Encoders.AMOpticalEncoder.PULSES_PER_REV);
+    public static final double FORWARD_SPEED_LIMIT = HardwareSpecs.Motors.CIMMotor.MAX_SPEED_RPM;
+    public static final double REVERSE_SPEED_LIMIT = -FORWARD_SPEED_LIMIT;
     
     // ==================================================================================
     //                        C O N S T R U C T O R S
@@ -48,16 +50,16 @@ public class CANDrivetrainSubsystem extends DrivetrainSubsystem {
             talon.configNominalOutputVoltage(+0.0f, -0.0f);
             talon.configPeakOutputVoltage(+12.0f, -12.0f);
 
-            talon.configEncoderCodesPerRev(AMOpticalEncoderSpecs.CYCLES_PER_REV);
+            talon.configEncoderCodesPerRev(ENCODER_CODES_PER_REV);
 
             // keep the motor and sensor in phase
             talon.reverseSensor(false);
 
             // Soft limits can be used to disable motor drive when the sensor position
             // is outside of the limits
-            talon.setForwardSoftLimit(CIMMotorSpecs.MAX_SPEED_RPM);
+            talon.setForwardSoftLimit(FORWARD_SPEED_LIMIT);
             talon.enableForwardSoftLimit(false);
-            talon.setReverseSoftLimit(-CIMMotorSpecs.MAX_SPEED_RPM);
+            talon.setReverseSoftLimit(REVERSE_SPEED_LIMIT);
             talon.enableReverseSoftLimit(false);
 
             // brake mode: true for brake; false for coast
@@ -73,8 +75,7 @@ public class CANDrivetrainSubsystem extends DrivetrainSubsystem {
             // error the PID terms are zeroed (F term remains in effect) and the integral
             // accumulator is cleared. Value is in the same units as the closed loop error.
             // Initially make the allowable error 10% of a revolution
-            int allowableClosedLoopErr = (int) (0.1 * AMOpticalEncoderSpecs.PULSES_PER_REV);
-            talon.setAllowableClosedLoopErr(allowableClosedLoopErr);
+            talon.setAllowableClosedLoopErr(CLOSED_LOOP_ERROR);
 
             talon.setProfile(0);
             talon.setP(P_VALUE);

@@ -8,11 +8,11 @@ import org.strongback.hardware.Hardware;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class BallHolderSubsystem {
-    public static final int RIGHT_MOTOR_CHANNEL = 0;
-    public static final int LEFT_MOTOR_CHANNEL  = 2;
+    public static final int RIGHT_WINDOW_MOTOR_PWM_CHANNEL = 1;
+    public static final int LEFT_WINDOW_MOTOR_PWM_CHANNEL = 2;
 
     public static final int POT_CHANNEL = 0;
-    public static final int SWITCH_CHANNEL = 1;
+    public static final int SWITCH_DIO_CHANNEL = 1;
     
     /*
      * The scaling factor multiplied by the analog voltage value to obtain the angle in degrees
@@ -43,12 +43,9 @@ public class BallHolderSubsystem {
     public static final double ARM_EXTEND_SPEED  = 0.2d;
     public static final double ARM_RETRACT_SPEED = -0.2d;
 
-    public enum Direction {
-        ROTATE_FORWARD, ROTATE_BACKWARD
-    };
-
     private final Motor ballHolderMotor;
     private final AngleSensor angleSensor;
+    
     private final Switch stowSwitch;
 
 
@@ -57,10 +54,10 @@ public class BallHolderSubsystem {
     // ==================================================================================
 
     public BallHolderSubsystem() {
-        this.ballHolderMotor = Motor.compose(Hardware.Motors.talon(RIGHT_MOTOR_CHANNEL), 
-                                             Hardware.Motors.talon(LEFT_MOTOR_CHANNEL).invert());
+        this.ballHolderMotor = Motor.compose(Hardware.Motors.talon(RIGHT_WINDOW_MOTOR_PWM_CHANNEL), 
+                                             Hardware.Motors.talon(LEFT_WINDOW_MOTOR_PWM_CHANNEL).invert());
         
-        this.stowSwitch = Hardware.Switches.normallyOpen(SWITCH_CHANNEL);
+        this.stowSwitch = Hardware.Switches.normallyOpen(SWITCH_DIO_CHANNEL);
         
         this.angleSensor = Hardware.AngleSensors.potentiometer(POT_CHANNEL, POT_FULL_RANGE, POT_OFFSET_DEG);
         
@@ -100,11 +97,6 @@ public class BallHolderSubsystem {
      */
     public double getAngle() {
         return this.angleSensor.getAngle();
-    }
-
-    public void setSpeed(final Direction dir, double speed) {
-        speed = Math.abs(speed) * (dir == Direction.ROTATE_FORWARD ? 1 : -1);
-        this.setSpeed(speed);
     }
 
     public void updateStatus() {

@@ -1,105 +1,160 @@
 package org.stlpriory.robotics.subsystems;
 
+import org.stlpriory.robotics.hardware.HardwareSpecs;
 import org.strongback.components.Motor;
 import org.strongback.hardware.Hardware;
 
-import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.Servo;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class ShooterSubsystem {
-    public static final int BALL_LOADER_CHANNEL = 4;
+    public static final int SERVO_PWM_CHANNEL = 9;
 
-    public static final int LEFT_MOTOR_CHANNEL = 3;
-    public static final int LEFT_MOTOR_ENCODER_CHANNEL_A = 6;
-    public static final int LEFT_MOTOR_ENCODER_CHANNEL_B = 7;
+    public static final int LEFT_SHOOTER_MOTOR_PWM_CHANNEL = 3;
+    public static final int LEFT_SHOOTER_ENCODER_DIO_CHANNEL_A = 6;
+    public static final int LEFT_SHOOTER_ENCODER_DIO_CHANNEL_B = 7;
     
-    public static final int RIGHT_MOTOR_CHANNEL = 1;
-    public static final int RIGHT_MOTOR_ENCODER_CHANNEL_A = 8;
-    public static final int RIGHT_MOTOR_ENCODER_CHANNEL_B = 9;
+    public static final int RIGHT_SHOOTER_MOTOR_PWM_CHANNEL = 0;
+    public static final int RIGHT_SHOOTER_ENCODER_DIO_CHANNEL_A = 8;
+    public static final int RIGHT_SHOOTER_ENCODER_DIO_CHANNEL_B = 9;
     
-    public static final double KEEPING_SPEED = .1;
-    public static final double SUCK_SPEED = 1;
-    public static final double SHOOT_SPEED = 1;
+    // Target throttle settings within the range [-1.0,1.0]
+    public static final double KEEPING_SPEED = -0.1;
+    public static final double SUCK_SPEED    = -0.5;
+    public static final double SHOOT_SPEED   = 1.0;
+    
+    // Minimum shooting speed is 90% of the max speed (RPM) for the CIM motor
+    public static final double MIN_SHOOTING_SPEED = 0.9 * HardwareSpecs.Motors.MiniCIMMotor.MAX_SPEED_RPM; 
+    // Allowable difference between left and right motors is 5% of the max speed (RPM) for the CIM motor 
+    public static final double MAX_DIFFERENCE = 0.05 * HardwareSpecs.Motors.MiniCIMMotor.MAX_SPEED_RPM;
+    // Increment to use when decreasing the throttle setting [-1.0, 1.0]
+    public static final double DECREASE_VALUE = .01;
 
-    private final Motor shooterMotor;
-//    private final Encoder rightEncoder;
-//    private final Encoder leftEncoder; 
+    private static final double KICKER_OUT_POSITION = 0;
+    private static final double KICKER_IN_POSITION  = 1;
     
-    private final Solenoid ballLoaderTrigger;
+    private final Encoder rightEncoder;
+    private final Encoder leftEncoder; 
+
+    private final Motor rightMotor;
+    private final Motor leftMotor;
+    
+    private final Servo loaderArm;
 
     // ==================================================================================
     //                        C O N S T R U C T O R S
     // ==================================================================================
 
     public ShooterSubsystem() {
-        this.shooterMotor = Motor.compose(Hardware.Motors.talon(RIGHT_MOTOR_CHANNEL), 
-                                          Hardware.Motors.talon(LEFT_MOTOR_CHANNEL).invert());
+        this.rightMotor = Hardware.Motors.talon(RIGHT_SHOOTER_MOTOR_PWM_CHANNEL);
+        this.leftMotor  = Hardware.Motors.talon(LEFT_SHOOTER_MOTOR_PWM_CHANNEL).invert();
         
-//        this.rightEncoder = new Encoder(RIGHT_MOTOR_ENCODER_CHANNEL_A, RIGHT_MOTOR_ENCODER_CHANNEL_B, false);
-//        this.rightEncoder.setDistancePerPulse(CIMcoderSpecs.PULSES_PER_REV);
-//        
-//        this.leftEncoder  = new Encoder(LEFT_MOTOR_ENCODER_CHANNEL_A, LEFT_MOTOR_ENCODER_CHANNEL_B, true);
-//        this.leftEncoder.setDistancePerPulse(CIMcoderSpecs.PULSES_PER_REV);
+        // Distance per pulse is the fraction of a rotation you get with each encoder pulse
+        double angDistPerPulse = 1.0d / HardwareSpecs.Encoders.CIMcoder.PULSES_PER_REV;
         
-        this.ballLoaderTrigger  = new Solenoid(BALL_LOADER_CHANNEL);
+        this.rightEncoder = new Encoder(RIGHT_SHOOTER_ENCODER_DIO_CHANNEL_A, RIGHT_SHOOTER_ENCODER_DIO_CHANNEL_B);
+        this.rightEncoder.setDistancePerPulse(angDistPerPulse);
+        this.rightEncoder.setReverseDirection(false);
+
+        this.leftEncoder = new Encoder(LEFT_SHOOTER_ENCODER_DIO_CHANNEL_A, LEFT_SHOOTER_ENCODER_DIO_CHANNEL_B);
+        this.leftEncoder.setDistancePerPulse(angDistPerPulse);
+        this.leftEncoder.setReverseDirection(true);
+        
+        this.loaderArm = new Servo(SERVO_PWM_CHANNEL);
     }
     
     // ==================================================================================
     //                      P U B L I C   M E T H O D S
     // ==================================================================================
-    
-    public Motor getMotor() {
-        return this.shooterMotor;
+
+    public Motor getRightShooterMotor() {
+        return this.rightMotor;
+    }
+
+    public Motor getLeftShooterMotor() {
+        return this.leftMotor;
     }
     
-//    public Encoder getLeftEncoder() {
-//        return this.leftEncoder;
-//    }
-//    
-//    public Encoder getRightEncoder() {
-//        return this.rightEncoder;
-//    }
-
     public void extendLoaderArm() {
-        this.ballLoaderTrigger.set(true);
-    }
-
+        this.loaderArm.set(KICKER_OUT_POSITION);
+    }   
+    
     public void retractLoaderArm() {
-        this.ballLoaderTrigger.set(false);
+        this.loaderArm.set(KICKER_IN_POSITION);
     }
     
-    public boolean isLoaderArmRetracted() {
-        return !this.ballLoaderTrigger.get();
+    public boolean isLoaderArmRetracted()  {
+        return Math.abs(this.loaderArm.get() - KICKER_IN_POSITION) < 0.01;
+    }
+    
+    public boolean isLoaderArmExtended() {
+        return Math.abs(this.loaderArm.get() - KICKER_OUT_POSITION) < 0.01;
+    }
+    
+    /**
+     * @return the current right motor throttle setting
+     */
+    public double getRightThrottle() {
+        return this.rightMotor.getSpeed();
+    }
+    
+    /**
+     * @return the current left motor throttle setting
+     */
+    public double getLeftThrottle() {
+        return this.leftMotor.getSpeed();
+    }
+    
+    /**
+     * @return the right motor speed in rev/sec
+     */
+    public double getRightSpeed() {
+        return this.rightEncoder.getRate();
+    }
+    
+    /**
+     * @return the left motor speed in rev/sec
+     */
+    public double getLeftSpeed() {
+        return this.leftEncoder.getRate();
+    }
+    
+    /**
+     * @return the right motor speed in rev/min
+     */
+    public double getRightSpeedInRPM() {
+        return getRightSpeed() * 60.0d;
+    }
+    
+    /**
+     * @return the left motor speed in rev/min
+     */
+    public double getLeftSpeedInRPM() {
+        return getLeftSpeed() * 60.0d;
     }
     
     public void startShooter() {
-        this.shooterMotor.setSpeed(SHOOT_SPEED);
-
-//      while (true) {
-//          // Scale the left motor speed if the difference of the encoder values is > 10%
-//          double rEncoderRate = this.rightEncoder.getRate();
-//          double lEncoderRate = this.leftEncoder.getRate();
-//          double percentDiff  = 100.0 * Math.abs( (rEncoderRate - lEncoderRate) / rEncoderRate);
-//          if (percentDiff > 10) {
-//              double scaleFactor = rEncoderRate / lEncoderRate;
-//              this.leftShooter.set(-SHOOT_SPEED*scaleFactor);
-//          } else {
-//              break;
-//          }
-//      }
+        this.rightMotor.setSpeed(SHOOT_SPEED);
+        this.leftMotor.setSpeed(SHOOT_SPEED);
     }
     
     public void startSucker() {
-        this.shooterMotor.setSpeed(SHOOT_SPEED);
+        this.rightMotor.setSpeed(SUCK_SPEED);
+        this.leftMotor.setSpeed(SUCK_SPEED);
     }
 
     public void stop() {
-        this.shooterMotor.setSpeed(0);
+        this.rightMotor.setSpeed(0);
+        this.leftMotor.setSpeed(0);
     }
 
     public void updateStatus() {
-        SmartDashboard.putNumber("Shooter motor speed", this.shooterMotor.getSpeed());
-        SmartDashboard.putBoolean("Loader arm state", this.ballLoaderTrigger.get());
+        SmartDashboard.putNumber("Right shooter speed", this.rightMotor.getSpeed());
+        SmartDashboard.putNumber("Left shooter speed", this.leftMotor.getSpeed());
+        SmartDashboard.putNumber("Right encoder speed", getRightSpeed());
+        SmartDashboard.putNumber("Left encoder speed", getLeftSpeed());
+        SmartDashboard.putNumber("Servo", loaderArm.get());
     }
 
 }
